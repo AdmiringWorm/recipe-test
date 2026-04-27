@@ -78,8 +78,9 @@ BuildParameters.SetParameters(context: Context,
                             shouldPublishAwsLambdas: false,
                             shouldRunInspectCode: false,
                             shouldRunPSScriptAnalyzer: false,
-                            getProjectsToPack: () => (GetFiles("./src/test-library/*.csproj")),
-                            shouldRunDotNetPack: true);
+                            getProjectsToPack: () => GetFiles("./src/test-library/*.csproj"),
+                            shouldRunDotNetPack: true,
+                            publishProvider: PublishProviderType.GitReleaseManager);
 
 ToolSettings.SetToolSettings(context: Context);
 
