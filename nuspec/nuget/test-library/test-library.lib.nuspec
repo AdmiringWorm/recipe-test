@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <metadata>
+    <id>test-library.lib</id>
+    <version>__REPLACE__</version>
+    <title>test-library (Install)</title>
+    <authors>test-author</authors>
+    <projectUrl>https://github.com/AdmiringWorm/recipe-test</projectUrl>
+    <tags>test-library testing</tags>
+    <summary>My Summary</summary>
+    <description>Some kind of an awesome description</description>
+  </metadata>
+</package>

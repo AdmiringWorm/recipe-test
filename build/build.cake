@@ -485,6 +485,7 @@ BuildParameters.Tasks.ContinuousIntegrationTask = Task("CI")
     .IsDependentOn("Publish-PreRelease-Packages")
     .IsDependentOn("Publish-Release-Packages")
     .IsDependentOn("Publish-AWS-Lambdas")
+    .IsDependentOn("Publish-Public-Artifacts")
     .Finally(() =>
 {
     if (publishingError)

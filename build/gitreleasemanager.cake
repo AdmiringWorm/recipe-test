@@ -107,3 +107,46 @@ BuildParameters.Tasks.PublishReleaseNotesTask = Task("Publish-Release-Notes")
         GitReleaseManagerClose(gitReleaseManagerCredentials.Token, BuildParameters.RepositoryOwner, BuildParameters.RepositoryName, tagName, closeSettings);
     })
 );
+
+internal class GitReleaseManagerPublishProvider : IPublishProvider
+{
+    private readonly ICakeContext _context;
+    private readonly List<FilePath> _publishArtifacts = new List<FilePath>();
+
+    public GitReleaseManagerPublishProvider(ICakeContext context)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
+    public string Name { get; } = "GitReleaseManager";
+
+    public void AddArtifact(params FilePath[] artifactPaths)
+    {
+        _publishArtifacts.AddRange(artifactPaths);
+    }
+
+    public void PublishArtifacts()
+    {
+        var assets = string.Join(",", _publishArtifacts.Select(a => a.ToString()));
+
+        if (assets.Length == 0)
+        {
+            return;
+        }
+
+        var addAssetsSettings = new GitReleaseManagerAddAssetsSettings();
+
+        var gitReleaseManagerCredentials = GitReleaseManagerCredentials.FetchCredentials(_context);
+        var tagName = BuildParameters.Version.Milestone;
+        _context.Information("Using Tag Name '{0}' for publishing.", tagName);
+
+        if (BuildParameters.RepositoryHostedInGitLab)
+        {
+            addAssetsSettings.ArgumentCustomization = args => args.Append("--provider GitLab");
+        }
+
+        _context.RequireToolEx(BuildParameters.IsDotNetBuild || BuildParameters.PreferDotNetGlobalToolUsage ? ToolSettings.GitReleaseManagerGlobalTool : ToolSettings.GitReleaseManagerTool, (context) => {
+            context.GitReleaseManagerAddAssets(gitReleaseManagerCredentials.Token, BuildParameters.RepositoryOwner, BuildParameters.RepositoryName, tagName, assets, addAssetsSettings);
+        });
+    }
+}
