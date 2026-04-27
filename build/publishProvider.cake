@@ -11,7 +11,7 @@ BuildParameters.Tasks.PublishPublicArtifactsTask = Task("Publish-Public-Artifact
 
         provider.PublishArtifacts();
     })
-    .ReportError(exception =>
+    .OnError(exception =>
     {
         Error(exception.Message);
         Information("Publish-Public-Artifacts Task failed, but continuing with next Task...");
