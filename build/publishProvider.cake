@@ -7,21 +7,18 @@ BuildParameters.Tasks.PublishPublicArtifactsTask = Task("Publish-Public-Artifact
     .WithCriteria(() => BuildParameters.IsTagged, "Skipping because current commit is not tagged")
     .Does(() =>
     {
-        try
-        {
-            var provider = BuildParameters.PublishProvider;
+        var provider = BuildParameters.PublishProvider;
 
-            provider.PublishArtifacts();
-        }
-        catch (Exception ex)
-        {
-            Error(exception.Message);
-            Information("Publish-Public-Artifacts Task failed, but continuing with next Task...");
-            // We only set publishing errors if this is a stable release, pre-releases may not have
-            // any release notes associated, as such it is expected that the publishing may fail.
-            // To allow public pre-releases in the future, we however still attempt to upload any artifacts.
-            publishingError = BuildParameters.Version.MajorMinorPatch == BuildParameters.Version.SemVersion;
-        }
+        provider.PublishArtifacts();
+    })
+    .ReportError(exception =>
+    {
+        Error(exception.Message);
+        Information("Publish-Public-Artifacts Task failed, but continuing with next Task...");
+        // We only set publishing errors if this is a stable release, pre-releases may not have
+        // any release notes associated, as such it is expected that the publishing may fail.
+        // To allow public pre-releases in the future, we however still attempt to upload any artifacts.
+        publishingError = BuildParameters.Version.MajorMinorPatch == BuildParameters.Version.SemVersion;
     });
 
 public enum PublishProviderType
