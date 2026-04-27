@@ -15,7 +15,7 @@ BuildParameters.Tasks.PublishPublicArtifactsTask = Task("Publish-Public-Artifact
         }
         catch (Exception ex)
         {
-            Error(exception.Message);
+            Error(ex.Message);
             Information("Publish-Public-Artifacts Task failed, but continuing with next Task...");
             // We only set publishing errors if this is a stable release, pre-releases may not have
             // any release notes associated, as such it is expected that the publishing may fail.
