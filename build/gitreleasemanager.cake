@@ -142,7 +142,11 @@ internal class GitReleaseManagerPublishProvider : IPublishProvider
 
         if (BuildParameters.RepositoryHostedInGitLab)
         {
-            addAssetsSettings.ArgumentCustomization = args => args.Append("--provider GitLab");
+            addAssetsSettings.ArgumentCustomization = args => args.Append("--ci").Append("--provider GitLab");
+        }
+        else
+        {
+            addAssetsSettings.ArgumentCustomization = args => args.Append("--ci");
         }
 
         _context.RequireToolEx(BuildParameters.IsDotNetBuild || BuildParameters.PreferDotNetGlobalToolUsage ? ToolSettings.GitReleaseManagerGlobalTool : ToolSettings.GitReleaseManagerTool, (context) => {
