@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net48;net8.0;netstandard2.0</TargetFrameworks>
+    <RootNamespace>test_library</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Configurations>Debug;Release;ReleaseOfficial</Configurations>
+    <IsPackagable>True</IsPackagable>
+    <LangVersion>10.0</LangVersion>
+  </PropertyGroup>
+
+</Project>

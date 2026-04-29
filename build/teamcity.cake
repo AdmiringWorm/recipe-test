@@ -44,12 +44,6 @@ public class TeamCityTagInfo : ITagInfo
             {
                 IsTag = true;
                 Name = outputLines.FirstOrDefault();
-
-                context.Information("Command output:");
-                foreach(var line in outputLines)
-                {
-                    context.Information(line);
-                }
             }
         }
     }
@@ -65,10 +59,7 @@ public class TeamCityRepositoryInfo : IRepositoryInfo
     {
         Name = teamCity.Environment.Build.BuildConfName;
 
-        string baseRef = null;
-        context.Information("BuildConfName is {0}", context.BuildSystem().TeamCity.Environment.Build.BuildConfName);
-        context.Information("BuildNumber is {0}", context.BuildSystem().TeamCity.Environment.Build.Number);
-
+        var baseRef = context.BuildSystem().GitHubActions.Environment.Workflow.BaseRef;
         if (!string.IsNullOrEmpty(baseRef))
         {
             Branch = baseRef;
@@ -79,22 +70,17 @@ public class TeamCityRepositoryInfo : IRepositoryInfo
             // branch name if the branch name itself contains a '/'
             var tempName = context.Environment.GetEnvironmentVariable("Git_Branch");
 
-            context.Information("Git_Branch is {0}", tempName);
-
             const string headPrefix = "refs/heads/";
             const string tagPrefix = "refs/tags/";
 
             if (!string.IsNullOrEmpty(tempName))
             {
-                context.Information("Trimming branch name if it starts with {0} or {1}...", headPrefix, tagPrefix);
                 if (tempName.StartsWith(headPrefix))
                 {
-                    context.Information("Branch name starts with {0}, trimming it...", headPrefix);
                     tempName = tempName.Substring(headPrefix.Length);
                 }
                 else if (tempName.StartsWith(tagPrefix))
                 {
-                    context.Information("Branch name starts with {0}, trimming it...", tagPrefix);
                     var gitTool = context.Tools.Resolve("git");
                     if (gitTool == null)
                     {
@@ -123,46 +109,16 @@ public class TeamCityRepositoryInfo : IRepositoryInfo
                             if (lines.Count != 0)
                             {
                                 tempName = lines[0].TrimStart(new []{ ' ', '*' }).Replace("origin/", string.Empty);
-                                context.Information("Branch name is {0}", tempName);
-
-                                context.Information("Command output:");
-                                foreach(var line in lines)
-                                {
-                                    context.Information(line);
-                                }
-                            }
-                            else
-                            {
-                                context.Information("No branches contain the tag {0}, using the tag name as the branch name...", tempName);
-                            }
-                        }
-                        else
-                        {
-                            context.Error("Unable to find branch name for tag {0}!", tempName);
-                            context.Information("Writing out standard out...");
-                            var standardOutLines = redirectedStandardOutput.ToList();
-                            foreach (var standardOutLine in standardOutLines)
-                            {
-                                context.Information(standardOutLine);
-                            }
-
-                            context.Information("Writing out standard error...");
-                            var standardErrorLines = redirectedError.ToList();
-                            foreach (var standardErrorLine in standardErrorLines)
-                            {
-                                context.Information(standardErrorLine);
                             }
                         }
                     }
                 }
                 else if (tempName.IndexOf('/') >= 0)
                 {
-                    context.Information("Branch name contains '/', trimming it to the last segment...");
                     tempName = tempName.Substring(tempName.LastIndexOf('/') + 1);
                 }
             }
 
-            context.Information("Branch name is {0}", tempName);
             Branch = tempName;
         }
 

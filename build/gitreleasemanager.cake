@@ -17,6 +17,8 @@
 // TASK DEFINITIONS
 ///////////////////////////////////////////////////////////////////////////////
 
+using System.Net.Http.Headers;
+
 BuildParameters.Tasks.CreateReleaseNotesTask = Task("Create-Release-Notes")
     .Does(() => RequireTool(BuildParameters.IsDotNetBuild || BuildParameters.PreferDotNetGlobalToolUsage ? ToolSettings.GitReleaseManagerGlobalTool : ToolSettings.GitReleaseManagerTool, () => {
         var gitReleaseManagerCredentials = GitReleaseManagerCredentials.FetchCredentials(Context);
