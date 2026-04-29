@@ -109,15 +109,23 @@ internal class GitHubPublishProvider : IPublishProvider
             Credentials = new Credentials(credentials.Token),
         };
 
-        var release = await client.Repository.Release.Get(BuildParameters.RepositoryOwner, BuildParameters.RepositoryName, BuildParameters.Version.Milestone);
+        try
+        {
+            var release = await client.Repository.Release.Get(BuildParameters.RepositoryOwner, BuildParameters.RepositoryName, BuildParameters.Version.Milestone);
 
-        if (release == null)
+            if (release == null)
+            {
+                _context.Warning("No GitHub release exists with the tag {0}, unable to publish public artifacts.", BuildParameters.Version.Milestone);
+                return false;
+            }
+
+            return true;
+        }
+        catch (NotFoundException)
         {
             _context.Warning("No GitHub release exists with the tag {0}, unable to publish public artifacts.", BuildParameters.Version.Milestone);
             return false;
         }
-
-        return true;
     }
 
     public async Task PublishArtifactsAsync()
