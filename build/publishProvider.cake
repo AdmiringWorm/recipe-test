@@ -1,3 +1,5 @@
+using Octokit;
+
 BuildParameters.Tasks.PublishPublicArtifactsTask = Task("Publish-Public-Artifacts")
     .IsDependentOn("Build-MSI")
     .IsDependentOn("Package")
@@ -5,26 +7,23 @@ BuildParameters.Tasks.PublishPublicArtifactsTask = Task("Publish-Public-Artifact
     .WithCriteria(() => !BuildParameters.IsLocalBuild || BuildParameters.ForceContinuousIntegration, "Skipping because this is a local build, and force isn't being applied")
     .WithCriteria(() => !BuildParameters.IsPullRequest, "Skipping because current build is from a Pull Request")
     .WithCriteria(() => BuildParameters.IsTagged, "Skipping because current commit is not tagged")
-    .Does(() =>
+    .Does(async () =>
     {
         var provider = BuildParameters.PublishProvider;
 
-        provider.PublishArtifacts();
+        await provider.PublishArtifactsAsync();
     })
     .OnError(exception =>
     {
-        Warning(exception.Message);
+        Error(exception.Message);
         Information("Publish-Public-Artifacts Task failed, but continuing with next Task...");
-        // We only set publishing errors if this is a stable release, pre-releases may not have
-        // any release notes associated, as such it is expected that the publishing may fail.
-        // To allow public pre-releases in the future, we however still attempt to upload any artifacts.
-        publishingError = BuildParameters.Version.MajorMinorPatch == BuildParameters.Version.SemVersion;
+        publishingError = true;
     });
 
 public enum PublishProviderType
 {
     None,
-    GitReleaseManager,
+    GitHub,
 }
 
 public interface IPublishProvider
@@ -33,15 +32,17 @@ public interface IPublishProvider
 
     void AddArtifact(params FilePath[] artifactPaths);
 
-    void PublishArtifacts();
+    Task<bool> CanPublishArtifactsAsync();
+
+    Task PublishArtifactsAsync();
 }
 
 public static IPublishProvider GetPublishProvider(ICakeContext context, PublishProviderType providerType)
 {
     switch (providerType)
     {
-        case PublishProviderType.GitReleaseManager:
-            return new GitReleaseManagerPublishProvider(context);
+        case PublishProviderType.GitHub:
+            return new GitHubPublishProvider(context);
 
         default:
             return new NullPublishProvider(context);
@@ -64,8 +65,88 @@ internal class NullPublishProvider : IPublishProvider
         // Nothing to do, we aren't publishing anything in this case.
     }
 
-    public void PublishArtifacts()
+    public Task<bool> CanPublishArtifactsAsync()
+    {
+        return System.Threading.Tasks.Task.FromResult(false);
+    }
+
+    public Task PublishArtifactsAsync()
     {
         _context.Information("[NullPublishProvider] No artifacts possible to publish.");
+        return System.Threading.Tasks.Task.CompletedTask;
+    }
+}
+
+internal class GitHubPublishProvider : IPublishProvider
+{
+    private readonly ICakeContext _context;
+    private readonly List<FilePath> _publishArtifacts = new List<FilePath>();
+
+    public GitHubPublishProvider(ICakeContext context)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+    }
+
+    public string Name { get; } = "GitHub";
+
+    public void AddArtifact(params FilePath[] artifactPaths)
+    {
+        _publishArtifacts.AddRange(artifactPaths);
+    }
+
+    public async Task<bool> CanPublishArtifactsAsync()
+    {
+        var credentials = GitReleaseManagerCredentials.FetchCredentials(_context);
+
+        if (string.IsNullOrWhiteSpace(credentials.Token))
+        {
+            _context.Information("No GitReleaseManager Credentials found, unable to publish public artifacts.");
+            return false;
+        }
+
+        var client = new GitHubClient(new Octokit.ProductHeaderValue("Chocolatey.Cake.Recipe"))
+        {
+            Credentials = new Credentials(credentials.Token),
+        };
+
+        var release = await client.Repository.Release.Get(BuildParameters.RepositoryOwner, BuildParameters.RepositoryName, BuildParameters.Version.Milestone);
+
+        if (release == null)
+        {
+            _context.Warning("No GitHub release exists with the tag {0}, unable to publish public artifacts.", BuildParameters.Version.Milestone);
+            return false;
+        }
+
+        return true;
+    }
+
+    public async Task PublishArtifactsAsync()
+    {
+        if (!await CanPublishArtifactsAsync())
+        {
+            return;
+        }
+
+        var assets = string.Join(",", _publishArtifacts.Select(a => a.ToString()));
+
+        if (assets.Length == 0)
+        {
+            return;
+        }
+
+        var addAssetsSettings = new GitReleaseManagerAddAssetsSettings();
+
+        if (_context.EnvironmentVariable("CI") != null || _context.EnvironmentVariable("TEAMCITY_VERSION") != null)
+        {
+            addAssetsSettings.ArgumentCustomization = args => args.Append("--ci");
+        }
+
+        var gitReleaseManagerCredentials = GitReleaseManagerCredentials.FetchCredentials(_context);
+        var tagName = BuildParameters.Version.Milestone;
+        _context.Information("Using Tag Name '{0}' for publishing.", tagName);
+
+        _context.RequireToolEx(BuildParameters.IsDotNetBuild || BuildParameters.PreferDotNetGlobalToolUsage ? ToolSettings.GitReleaseManagerGlobalTool : ToolSettings.GitReleaseManagerTool, (context) => {
+            context.GitReleaseManagerAddAssets(gitReleaseManagerCredentials.Token, BuildParameters.RepositoryOwner, BuildParameters.RepositoryName, tagName, assets, addAssetsSettings);
+        });
     }
 }

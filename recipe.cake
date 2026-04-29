@@ -80,7 +80,7 @@ BuildParameters.SetParameters(context: Context,
                             shouldRunPSScriptAnalyzer: false,
                             getProjectsToPack: () => GetFiles("./src/test-library/*.csproj"),
                             shouldRunDotNetPack: true,
-                            publishProvider: PublishProviderType.GitReleaseManager);
+                            publishProvider: PublishProviderType.GitHub);
 
 ToolSettings.SetToolSettings(context: Context);
 
