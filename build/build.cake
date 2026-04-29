@@ -482,9 +482,9 @@ BuildParameters.Tasks.DefaultTask = Task("Default")
 
 
 BuildParameters.Tasks.ContinuousIntegrationTask = Task("CI")
-    .IsDependentOn("Publish-Public-Artifacts")
     .IsDependentOn("Publish-PreRelease-Packages")
     .IsDependentOn("Publish-Release-Packages")
+    .IsDependentOn("Publish-Public-Artifacts")
     .IsDependentOn("Publish-AWS-Lambdas")
     .Finally(() =>
 {

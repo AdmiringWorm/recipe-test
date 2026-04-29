@@ -2,7 +2,7 @@ using Octokit;
 
 BuildParameters.Tasks.PublishPublicArtifactsTask = Task("Publish-Public-Artifacts")
     .IsDependentOn("Build-MSI")
-    .IsDependentOn("Package")
+    .IsDependentOn("Publish-Release-Packages")
     .WithCriteria(() => BuildParameters.ShouldPublishPublicArtifacts, "Skipping because publishing of public artifacts is not enabled")
     .WithCriteria(() => !BuildParameters.IsLocalBuild || BuildParameters.ForceContinuousIntegration, "Skipping because this is a local build, and force isn't being applied")
     .WithCriteria(() => !BuildParameters.IsPullRequest, "Skipping because current build is from a Pull Request")
