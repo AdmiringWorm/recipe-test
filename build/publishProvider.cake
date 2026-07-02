@@ -288,5 +288,17 @@ internal class GitHubPublishProvider : PublishProviderBase
             _context.Warning("No GitHub release exists with the tag {0}, unable to publish public artifacts.", BuildParameters.Version.Milestone);
             return false;
         }
+        catch (AuthorizationException exception)
+        {
+            var message = string.Format("GitHub credentials are invalid or unauthorized, unable to publish public artifacts. {0}", exception.Message);
+
+            throw new Exception(message, exception);
+        }
+        catch (ForbiddenException exception)
+        {
+            var message = string.Format("GitHub API access was forbidden or rate-limited, unable to publish public artifacts. {0}", exception.Message);
+
+            throw new Exception(message, exception);
+        }
     }
 }
