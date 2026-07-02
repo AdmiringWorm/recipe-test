@@ -488,7 +488,6 @@ BuildParameters.Tasks.ContinuousIntegrationTask = Task("CI")
     .IsDependentOn("Publish-AWS-Lambdas")
     .Finally(() =>
 {
-    Information("Executing CI finally block.");
     if (publishingError)
     {
         Error("Detected publishing error, throwing additional exception.");
