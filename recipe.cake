@@ -12,7 +12,7 @@
 Task("Create-Zip-Packages")
     .IsDependentOn("DotNetBuild")
     .IsDependeeOf("Package")
-    .Does(() =>
+    .Does(async () =>
 {
     EnsureDirectoryExists(BuildParameters.Paths.Directories.ChocolateyPackages);
 
@@ -27,7 +27,7 @@ Task("Create-Zip-Packages")
     if (FileExists(outputFile))
     {
         BuildParameters.BuildProvider.UploadArtifact(outputFile);
-        BuildParameters.PublishProvider.AddArtifact(outputFile);
+        await BuildParameters.PublishProvider.AddArtifactAsync(ArtifactType.Other, outputFile);
     }
 });
 
@@ -56,6 +56,8 @@ Task("Prepare-NuGet-Packages")
 
 Environment.SetVariableNames();
 
+BuildParameters.AddGitHubPublishProvider(Context);
+
 BuildParameters.SetParameters(context: Context,
                             buildSystem: BuildSystem,
                             sourceDirectoryPath: "./src",
@@ -78,7 +80,7 @@ BuildParameters.SetParameters(context: Context,
                             shouldPublishAwsLambdas: false,
                             shouldRunInspectCode: false,
                             shouldRunPSScriptAnalyzer: false,
-                            getProjectsToPack: () => (GetFiles("./src/test-library/*.csproj")),
+                            getProjectsToPack: () => GetFiles("./src/test-library/*.csproj"),
                             shouldRunDotNetPack: true);
 
 ToolSettings.SetToolSettings(context: Context);
